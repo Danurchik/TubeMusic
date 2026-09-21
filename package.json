@@ -23,7 +23,9 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "displayLanguageSelector": true,
+      "installerLanguages": ["ru_RU", "en_US"]
     }
   },
   "dependencies": {
