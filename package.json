@@ -1,0 +1,37 @@
+{
+  "name": "tubemusic",
+  "version": "1.0.0",
+  "description": "Custom desktop client with Discord RPC",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "author": "Danurchik",
+  "license": "ISC",
+  "build": {
+    "appId": "com.tm.desktop",
+    "productName": "TubeMusic",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "TubeMusic_icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "dependencies": {
+    "@xhayper/discord-rpc": "^1.3.4",
+    "png-to-ico": "^3.0.2"
+  },
+  "devDependencies": {
+    "electron": "^44.4.3",
+    "electron-builder": "^26.15.3"
+  }
+}
