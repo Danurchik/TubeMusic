@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>TubeMusic Widget</title>
+  <style>
+    /* Базовые настройки для прозрачного окна Electron */
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: transparent !important;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      justify-content: center; /* Центрируем виджет внутри невидимого окна */
+      align-items: center;
+      height: 100vh;
+    }
+
+    .widget {
+      width: 340px;
+      height: 80px;
+      background: var(--widget-background, rgba(20, 20, 25, 0.75));
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--widget-border, rgba(255, 255, 255, 0.1));
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      box-sizing: border-box;
+
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .widget.theme-dark { --widget-background: rgba(12, 12, 15, 0.96); --widget-border: rgba(255, 255, 255, 0.08); }
+    .widget.theme-light { --widget-background: rgba(245, 245, 250, 0.94); --widget-border: rgba(0, 0, 0, 0.08); }
+    .widget.theme-light .title { color: #17171c; }
+    .widget.theme-light .artist { color: #60606a; }
+
+    /* Подготавливаем виджет за пределами окна с нужной стороны */
+    .widget.bottom-right, .widget.top-right { transform: translateX(120%); }
+    .widget.bottom-left, .widget.top-left { transform: translateX(-120%); }
+    .widget.top-center { transform: translateY(-120%); }
+    .widget.bottom-center { transform: translateY(120%); }
+
+    /* Класс, который заставляет виджет выехать в центр */
+    .widget.show {
+      transform: translate(0, 0) !important;
+    }
+
+    /* Обложка трека */
+    .cover {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      object-fit: cover;
+      margin-right: 16px;
+      background: #2a2a35; /* Цвет-заглушка, пока картинка грузится */
+    }
+
+    /* Блок с текстом */
+    .info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    /* Название трека */
+    .title {
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis; /* Обрезает длинный текст троеточием */
+    }
+
+    /* Имя исполнителя */
+    .artist {
+      color: var(--widget-artist, #a0a0a8);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="widget" id="widget">
+    <img id="cover" class="cover" src="" alt="">
+    <div class="info">
+      <div id="title" class="title">Загрузка...</div>
+      <div id="artist" class="artist">TubeMusic</div>
+    </div>
+  </div>
+
+  <script>
+    const widget = document.getElementById('widget');
+    const coverEl = document.getElementById('cover');
+    const titleEl = document.getElementById('title');
+    const artistEl = document.getElementById('artist');
+
+    let hideTimeout;
+
+    // Слушаем команды от основного процесса (main.js)
+    function hideWidget() {
+      widget.classList.remove('show');
+    }
+
+    window.widgetAPI.onTrack((trackData) => {
+      titleEl.innerText = trackData.title || 'Неизвестный трек';
+      artistEl.innerText = trackData.artist || 'Неизвестный исполнитель';
+      coverEl.src = trackData.cover || '';
+
+      widget.className = `widget ${trackData.position} theme-${trackData.theme || 'glass'}`;
+
+      // Ждем кадр, чтобы CSS успел поставить виджет за край, и выдвигаем его
+      requestAnimationFrame(() => {
+        widget.classList.add('show');
+      });
+
+      clearTimeout(hideTimeout);
+      hideTimeout = setTimeout(() => {
+        hideWidget();
+      }, (trackData.duration || 4) * 1000);
+    });
+
+    window.widgetAPI.onHide(() => {
+      clearTimeout(hideTimeout);
+      hideWidget();
+    });
+
+    window.widgetAPI.onPosition(position => {
+      widget.classList.remove('top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right');
+      widget.classList.add(position);
+    });
+  </script>
+</body>
+</html>

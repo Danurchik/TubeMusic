@@ -43,6 +43,7 @@ function getRealState() {
     artwork: artworkUrl,
     currentTime,
     duration,
+    url: location.href,
     isPlaying: !video.paused && video.playbackRate > 0,
     isLiked
   };
@@ -76,17 +77,17 @@ ipcRenderer.on('discord-sync-request', (event, discordMemory) => {
   const realState = getRealState();
   if (!realState) return;
 
-  const isDiscordWrong = 
-    discordMemory.title !== realState.title || 
+  const isDiscordWrong = !discordMemory ||
+    discordMemory.title !== realState.title ||
     discordMemory.isPlaying !== realState.isPlaying;
 
   if (isDiscordWrong) {
     ipcRenderer.send('track-update', realState);
     lastSentState = realState;
+    if (realState.isPlaying) {
+      lastExpectedEndTime = Date.now() + Math.floor((realState.duration - realState.currentTime) * 1000);
+    }
   }
-});
-
-ipcRenderer.on('discord-ack', (event, message) => {
 });
 
 ipcRenderer.on('media-control', (event, action) => {

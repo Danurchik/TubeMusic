@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; height: 100vh; background: transparent; color: #fff; font: 13px 'Segoe UI', sans-serif; }
+    .player { height: 100%; display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #ffffff22; border-radius: 14px; background: #17171def; box-shadow: 0 10px 28px #0008; }
+    .cover { width: 56px; height: 56px; border-radius: 9px; object-fit: cover; background: #303039; flex: 0 0 auto; }
+    .info { min-width: 0; flex: 1; }
+    .title, .artist { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .title { font-weight: 600; margin-bottom: 5px; }
+    .artist { color: #aaaab4; }
+    .controls { display: flex; align-items: center; gap: 4px; }
+    button { border: 0; border-radius: 8px; width: 32px; height: 34px; color: white; background: #ffffff12; cursor: pointer; font-size: 16px; }
+    button:hover { background: #ffffff25; }
+    button.play { font-size: 18px; }
+    button.liked { color: #ff5a87; }
+  </style>
+</head>
+<body>
+  <div class="player">
+    <img id="cover" class="cover" alt="">
+    <div class="info"><div id="title" class="title">TubeMusic</div><div id="artist" class="artist">Ожидание трека</div></div>
+    <div class="controls">
+      <button aria-label="Предыдущий трек" data-action="previous">⏮</button>
+      <button id="play" class="play" aria-label="Пауза" data-action="play-pause">Ⅱ</button>
+      <button aria-label="Следующий трек" data-action="next">⏭</button>
+      <button id="like" aria-label="Поставить лайк" data-action="like">♡</button>
+    </div>
+  </div>
+  <script>
+    const cover = document.getElementById('cover');
+    const title = document.getElementById('title');
+    const artist = document.getElementById('artist');
+    const play = document.getElementById('play');
+    const like = document.getElementById('like');
+    document.querySelectorAll('[data-action]').forEach(button => {
+      button.addEventListener('click', () => window.widgetAPI.control(button.dataset.action));
+    });
+    window.widgetAPI.onMiniPlayerTrack(track => {
+      title.textContent = track.title || 'Неизвестный трек';
+      artist.textContent = track.artist || 'Неизвестный исполнитель';
+      cover.src = track.cover || '';
+      play.textContent = track.isPlaying ? 'Ⅱ' : '▶';
+      play.setAttribute('aria-label', track.isPlaying ? 'Пауза' : 'Играть');
+      like.textContent = track.isLiked ? '♥' : '♡';
+      like.classList.toggle('liked', Boolean(track.isLiked));
+      like.setAttribute('aria-label', track.isLiked ? 'Убрать лайк' : 'Поставить лайк');
+    });
+  </script>
+</body>
+</html>
