@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage } = require
 const path = require('path');
 const fs = require('fs');
 const { Client } = require('@xhayper/discord-rpc');
+const { autoUpdater } = require('electron-updater');
 
 app.name = 'TubeMusic';
 app.setAppUserModelId('com.tm.desktop');
@@ -15,6 +16,8 @@ let rpcUpdateTimeout = null;
 let rpcRetryTimeout = null;
 let syncInterval = null;
 let isQuitting = false;
+let updateCheckStarted = false;
+let updateInstallScheduled = false;
 
 const settingsPath = path.join(app.getPath('userData'), 'settings.json');
 const defaultSettings = { widgetEnabled: true, widgetPosition: 'bottom-right', widgetDuration: 4, widgetTheme: 'glass', widgetDisplayId: null, miniPlayerEnabled: false };
@@ -42,6 +45,51 @@ function saveSettings() {
   } catch (error) {
     console.error('Не удалось сохранить настройки:', error);
   }
+}
+
+function startAutoUpdater() {
+  if (!app.isPackaged || updateCheckStarted) return;
+  updateCheckStarted = true;
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = app.getVersion().includes('-');
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('Проверка обновлений TubeMusic...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log(`Доступно обновление TubeMusic: ${info.version}`);
+  });
+
+  autoUpdater.on('update-not-available', (info) => {
+    console.log(`TubeMusic уже обновлён: ${info.version}`);
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    console.log(`Загрузка обновления TubeMusic: ${progress.percent.toFixed(1)}%`);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log(`Обновление TubeMusic загружено: ${info.version}`);
+    if (updateInstallScheduled || isQuitting) return;
+    updateInstallScheduled = true;
+    setTimeout(() => {
+      if (!isQuitting) isQuitting = true;
+      autoUpdater.quitAndInstall(false, true);
+    }, 1000);
+  });
+
+  autoUpdater.on('error', (error) => {
+    console.warn('Проверка обновлений TubeMusic не удалась:', error.message);
+  });
+
+  setTimeout(() => {
+    autoUpdater.checkForUpdates().catch((error) => {
+      console.warn('Не удалось запустить проверку обновлений TubeMusic:', error.message);
+    });
+  }, 3000);
 }
 
 const prevIcon = nativeImage.createFromPath(path.join(__dirname, 'prev.png'));
@@ -402,6 +450,7 @@ app.whenReady().then(() => {
   createWidgetWindow();
   createTray(); // Запускаем трей
   if (settings.miniPlayerEnabled) createMiniPlayerWindow();
+  startAutoUpdater();
 
   screen.on('display-removed', () => {
     if (!screen.getAllDisplays().some(display => display.id === settings.widgetDisplayId)) {
