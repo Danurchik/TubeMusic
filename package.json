@@ -27,7 +27,8 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "TubeMusic_icon.ico"
+      "icon": "TubeMusic_icon.ico",
+      "artifactName": "TubeMusic-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
